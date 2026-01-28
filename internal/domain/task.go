@@ -1,4 +1,4 @@
-package model
+package domain
 
 import "time"
 
@@ -8,5 +8,5 @@ type Task struct {
 	IsCompleted bool
 
 	CreatedAt   time.Time
-	CompletedAt time.Time
+	CompletedAt *time.Time
 }

@@ -3,52 +3,51 @@ package usecase
 import (
 	"time"
 
-	"github.com/yakupovdev/ToDoList/internal/model"
-	"github.com/yakupovdev/ToDoList/internal/repository"
+	"github.com/yakupovdev/ToDoList/internal/domain"
 )
 
 type TaskUsecase struct {
-	repo *repository.TaskRepository
+	repo domain.TaskRepository
 }
 
-func NewTaskUsecase(repo *repository.TaskRepository) *TaskUsecase {
+func NewTaskUsecase(repo domain.TaskRepository) *TaskUsecase {
 	return &TaskUsecase{
 		repo: repo,
 	}
 }
 
-func (uc *TaskUsecase) AddTask(header, description string) (model.Task, error) {
-	task := model.Task{
+func (uc *TaskUsecase) AddTask(header, description string) (domain.Task, error) {
+	task := domain.Task{
 		Header:      header,
 		Description: description,
 		IsCompleted: false,
 		CreatedAt:   time.Now(),
-		CompletedAt: time.Time{},
+		CompletedAt: nil,
 	}
 
 	if _, err := uc.repo.AddTask(task); err != nil {
-		return model.Task{}, err
+		return domain.Task{}, err
 	}
 
 	return task, nil
 }
 
-func (uc *TaskUsecase) GetTasks() []model.Task {
+func (uc *TaskUsecase) GetTasks() []domain.Task {
 	return uc.repo.GetTasks()
 }
 
-func (uc *TaskUsecase) GetUncompletedTasks() []model.Task {
+func (uc *TaskUsecase) GetUncompletedTasks() []domain.Task {
 	return uc.repo.GetUncompletedTasks()
 }
 
-func (uc *TaskUsecase) GetTask(header string) (model.Task, error) {
+func (uc *TaskUsecase) GetTask(header string) (domain.Task, error) {
 	return uc.repo.GetTask(header)
 }
 
-func (uc *TaskUsecase) ChangeCompleteStatusTask(header string, isCompleted bool) (model.Task, error) {
+func (uc *TaskUsecase) ChangeCompleteStatusTask(header string, isCompleted bool) (domain.Task, error) {
 	task, err := uc.repo.ChangeCompleteStatusTask(header, isCompleted)
 	if err != nil {
-		return model.Task{}, err
+		return domain.Task{}, err
 	}
 	return task, nil
 }

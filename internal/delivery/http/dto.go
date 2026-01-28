@@ -1,7 +1,6 @@
-package model
+package http
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 )
@@ -28,18 +27,15 @@ type TaskResponse struct {
 	Description string `json:"description"`
 	IsCompleted bool   `json:"is_completed"`
 
-	CompletedAt time.Time `json:"completed_at"`
-	CreatedAt   time.Time `json:"created_at"`
-}
-
-func (addTaskResponse *TaskResponse) ToByteArray() []byte {
-	value, err := json.MarshalIndent(addTaskResponse, "", "	")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	CreatedAt   time.Time  `json:"created_at"`
+	CompletedAt *time.Time `json:"completed_at"`
 }
 
 type CompleteTaskRequest struct {
 	IsCompleted bool `json:"is_completed"`
+}
+
+type ErrorResponse struct {
+	Message string    `json:"message"`
+	Time    time.Time `json:"time"`
 }

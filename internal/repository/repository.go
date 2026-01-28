@@ -1,69 +1,61 @@
 package repository
 
 import (
+	"log"
 	"sync"
 	"time"
 
-	"github.com/yakupovdev/ToDoList/internal/model"
-	"github.com/yakupovdev/ToDoList/internal/storage"
+	"github.com/yakupovdev/ToDoList/internal/domain"
 )
 
-type Repository interface {
-	AddTask(model.Task) (model.Task, error)
-	GetTask(string) (model.Task, error)
-	RemoveTask(string) error
-	GetTasks() []model.Task
-	GetUncompletedTasks() []model.Task
-	ChangeCompleteStatusTask(string, bool) (model.Task, error)
-}
-
 type TaskRepository struct {
-	mtx     sync.RWMutex
-	storage *storage.Storage
+	tasks map[string]domain.Task
+	mtx   sync.RWMutex
 }
 
-func NewRepositoryStorage(storage *storage.Storage) *TaskRepository {
+func NewTaskRepository() *TaskRepository {
 	return &TaskRepository{
-		storage: storage,
-		mtx:     sync.RWMutex{},
+		tasks: make(map[string]domain.Task),
+		mtx:   sync.RWMutex{},
 	}
 }
 
-func (s *TaskRepository) AddTask(task model.Task) (model.Task, error) {
+func (s *TaskRepository) AddTask(task domain.Task) (domain.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	if _, ok := s.storage.Tasks[task.Header]; ok {
-		return model.Task{}, ErrTaskAlreadyExists
+	log.Println(task)
+	if _, ok := s.tasks[task.Header]; ok {
+		return domain.Task{}, domain.ErrTaskAlreadyExists
 	}
-	s.storage.Tasks[task.Header] = task
+	s.tasks[task.Header] = task
 	return task, nil
 }
 
-func (s *TaskRepository) GetTask(header string) (model.Task, error) {
+func (s *TaskRepository) GetTask(header string) (domain.Task, error) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	task, ok := s.storage.Tasks[header]
+	task, ok := s.tasks[header]
 	if !ok {
-		return model.Task{}, ErrTaskNotFound
+		return domain.Task{}, domain.ErrTaskNotFound
 	}
 	return task, nil
 }
 
-func (s *TaskRepository) GetTasks() []model.Task {
+func (s *TaskRepository) GetTasks() []domain.Task {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	tasks := make([]model.Task, 0, len(s.storage.Tasks))
-	for _, task := range s.storage.Tasks {
+	tasks := make([]domain.Task, 0, len(s.tasks))
+	for _, task := range s.tasks {
 		tasks = append(tasks, task)
 	}
 	return tasks
 }
 
-func (s *TaskRepository) GetUncompletedTasks() []model.Task {
+func (s *TaskRepository) GetUncompletedTasks() []domain.Task {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	tasks := make([]model.Task, 0, len(s.storage.Tasks))
-	for _, task := range s.storage.Tasks {
+	tasks := make([]domain.Task, 0, len(s.tasks))
+	for _, task := range s.tasks {
 		if !task.IsCompleted {
 			tasks = append(tasks, task)
 		}
@@ -71,31 +63,32 @@ func (s *TaskRepository) GetUncompletedTasks() []model.Task {
 	return tasks
 }
 
-func (s *TaskRepository) ChangeCompleteStatusTask(header string, status bool) (model.Task, error) {
+func (s *TaskRepository) ChangeCompleteStatusTask(header string, status bool) (domain.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	task, ok := s.storage.Tasks[header]
+	task, ok := s.tasks[header]
 	if !ok {
-		return model.Task{}, ErrTaskNotFound
+		return domain.Task{}, domain.ErrTaskNotFound
 	}
 	task.IsCompleted = status
 	if status {
-		task.CompletedAt = time.Now()
+		now := time.Now()
+		task.CompletedAt = &now
 	} else {
-		task.CompletedAt = time.Time{}
+		task.CompletedAt = nil
 	}
-	s.storage.Tasks[header] = task
+	s.tasks[header] = task
 	return task, nil
 }
 
 func (s *TaskRepository) RemoveTask(header string) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	_, ok := s.storage.Tasks[header]
+	_, ok := s.tasks[header]
 	if !ok {
-		return ErrTaskNotFound
+		return domain.ErrTaskNotFound
 	}
 
-	delete(s.storage.Tasks, header)
+	delete(s.tasks, header)
 	return nil
 }
