@@ -4,17 +4,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yakupovdev/ToDoList/model"
-	"github.com/yakupovdev/ToDoList/storage"
+	"github.com/yakupovdev/ToDoList/internal/model"
+	"github.com/yakupovdev/ToDoList/internal/storage"
 )
 
 type Repository interface {
-	AddTask(task model.Task)
-	GetTask(header string) (model.Task, error)
-	RemoveTask(header string) error
+	AddTask(model.Task) (model.Task, error)
+	GetTask(string) (model.Task, error)
+	RemoveTask(string) error
 	GetTasks() []model.Task
 	GetUncompletedTasks() []model.Task
-	CompleteTask(header string) error
+	ChangeCompleteStatusTask(string, bool) (model.Task, error)
 }
 
 type TaskRepository struct {
@@ -29,10 +29,14 @@ func NewRepositoryStorage(storage *storage.Storage) *TaskRepository {
 	}
 }
 
-func (s *TaskRepository) AddTask(task model.Task) {
+func (s *TaskRepository) AddTask(task model.Task) (model.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
+	if _, ok := s.storage.Tasks[task.Header]; ok {
+		return model.Task{}, ErrTaskAlreadyExists
+	}
 	s.storage.Tasks[task.Header] = task
+	return task, nil
 }
 
 func (s *TaskRepository) GetTask(header string) (model.Task, error) {
@@ -67,25 +71,28 @@ func (s *TaskRepository) GetUncompletedTasks() []model.Task {
 	return tasks
 }
 
-func (s *TaskRepository) CompleteTask(header string) error {
+func (s *TaskRepository) ChangeCompleteStatusTask(header string, status bool) (model.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	task, ok := s.storage.Tasks[header]
 	if !ok {
-		return ErrTaskNotFound
+		return model.Task{}, ErrTaskNotFound
 	}
-	task.IsCompleted = true
-	task.CompleteTime = time.Now()
-
+	task.IsCompleted = status
+	if status {
+		task.CompletedAt = time.Now()
+	} else {
+		task.CompletedAt = time.Time{}
+	}
 	s.storage.Tasks[header] = task
-	return nil
+	return task, nil
 }
 
 func (s *TaskRepository) RemoveTask(header string) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	_, err := s.GetTask(header)
-	if err != nil {
+	_, ok := s.storage.Tasks[header]
+	if !ok {
 		return ErrTaskNotFound
 	}
 

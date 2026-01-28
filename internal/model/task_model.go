@@ -7,6 +7,6 @@ type Task struct {
 	Description string
 	IsCompleted bool
 
-	CreationTime time.Time
-	CompleteTime time.Time
+	CreatedAt   time.Time
+	CompletedAt time.Time
 }

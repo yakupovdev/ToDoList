@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/yakupovdev/ToDoList/model"
+	"github.com/yakupovdev/ToDoList/internal/model"
 )
 
 type Storage struct {
