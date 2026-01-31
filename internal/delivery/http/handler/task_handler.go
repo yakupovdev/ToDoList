@@ -1,4 +1,4 @@
-package http
+package handler
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	http2 "github.com/yakupovdev/ToDoList/internal/delivery/http/dto"
 	"github.com/yakupovdev/ToDoList/internal/domain"
 	"github.com/yakupovdev/ToDoList/internal/usecase"
 )
@@ -23,10 +24,10 @@ func NewTaskHandler(uc *usecase.TaskUsecase) *TaskHandler {
 }
 
 func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
-	var req TaskRequest
+	var req http2.TaskRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -37,7 +38,7 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 	err := req.Validate()
 	if err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -48,7 +49,7 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 	task, err := th.uc.AddTask(req.Header, req.Description)
 	if err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -61,7 +62,7 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := TaskResponse{
+	res := http2.TaskResponse{
 		Header:      task.Header,
 		Description: task.Description,
 		IsCompleted: task.IsCompleted,
@@ -74,9 +75,9 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 func (th *TaskHandler) HandleChangeCompleteStatusTask(w http.ResponseWriter, r *http.Request) {
 	header := mux.Vars(r)["header"]
-	var req CompleteTaskRequest
+	var req http2.CompleteTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -86,7 +87,7 @@ func (th *TaskHandler) HandleChangeCompleteStatusTask(w http.ResponseWriter, r *
 	}
 	task, err := th.uc.ChangeCompleteStatusTask(header, req.IsCompleted)
 	if err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -98,7 +99,7 @@ func (th *TaskHandler) HandleChangeCompleteStatusTask(w http.ResponseWriter, r *
 		}
 		return
 	}
-	res := TaskResponse{
+	res := http2.TaskResponse{
 		Header:      task.Header,
 		Description: task.Description,
 		IsCompleted: task.IsCompleted,
@@ -125,7 +126,7 @@ func (th *TaskHandler) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 	header := mux.Vars(r)["header"]
 	task, err := th.uc.GetTask(header)
 	if err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -138,7 +139,7 @@ func (th *TaskHandler) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := TaskResponse{
+	res := http2.TaskResponse{
 		Header:      task.Header,
 		Description: task.Description,
 		IsCompleted: task.IsCompleted,
@@ -153,7 +154,7 @@ func (th *TaskHandler) HandleRemoveTask(w http.ResponseWriter, r *http.Request) 
 	header := mux.Vars(r)["header"]
 	err := th.uc.RemoveTask(header)
 	if err != nil {
-		errResponse := ErrorResponse{
+		errResponse := http2.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}

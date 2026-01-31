@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"log"
 	"sync"
 	"time"
 
@@ -23,7 +22,6 @@ func NewTaskRepository() *TaskRepository {
 func (s *TaskRepository) AddTask(task domain.Task) (domain.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	log.Println(task)
 	if _, ok := s.tasks[task.Header]; ok {
 		return domain.Task{}, domain.ErrTaskAlreadyExists
 	}

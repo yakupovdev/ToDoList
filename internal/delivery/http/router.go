@@ -1,29 +1,25 @@
 package http
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/yakupovdev/ToDoList/internal/delivery/http/handler"
+	"github.com/yakupovdev/ToDoList/internal/delivery/http/middleware"
 )
 
 type HTTPServer struct {
-	taskHandler *TaskHandler
+	taskHandler *handler.TaskHandler
 }
 
-func NewHTTPServer(taskHandler *TaskHandler) *HTTPServer {
+func NewHTTPServer(taskHandler *handler.TaskHandler) *HTTPServer {
 	return &HTTPServer{taskHandler: taskHandler}
 }
 
 func (s *HTTPServer) StartServer() error {
 	router := mux.NewRouter()
 
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
-			next.ServeHTTP(w, r)
-		})
-	})
+	router.Use(middleware.LoggerMiddleware)
 
 	router.Path("/tasks").Methods("POST").HandlerFunc(s.taskHandler.HandleAddTask)
 	router.Path("/tasks").Queries("completed", "false").Methods("GET").HandlerFunc(s.taskHandler.HandleGetUncompletedTasks)

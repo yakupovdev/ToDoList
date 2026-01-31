@@ -1,4 +1,4 @@
-package http
+package dto
 
 import (
 	"errors"
@@ -33,9 +33,4 @@ type TaskResponse struct {
 
 type CompleteTaskRequest struct {
 	IsCompleted bool `json:"is_completed"`
-}
-
-type ErrorResponse struct {
-	Message string    `json:"message"`
-	Time    time.Time `json:"time"`
 }
