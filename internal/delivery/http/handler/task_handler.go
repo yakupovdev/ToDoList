@@ -8,26 +8,26 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	http2 "github.com/yakupovdev/ToDoList/internal/delivery/http/dto"
-	"github.com/yakupovdev/ToDoList/internal/domain"
-	"github.com/yakupovdev/ToDoList/internal/usecase"
+	"github.com/yakupovdev/ToDoList/internal/delivery/http/dto"
+	"github.com/yakupovdev/ToDoList/internal/domain/entity/task"
+	task2 "github.com/yakupovdev/ToDoList/internal/usecase/task"
 )
 
 type TaskHandler struct {
-	uc *usecase.TaskUsecase
+	uc *task2.TaskUsecase
 }
 
-func NewTaskHandler(uc *usecase.TaskUsecase) *TaskHandler {
+func NewTaskHandler(uc *task2.TaskUsecase) *TaskHandler {
 	return &TaskHandler{
 		uc: uc,
 	}
 }
 
 func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
-	var req http2.TaskRequest
+	var req dto.TaskRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -38,7 +38,7 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 	err := req.Validate()
 	if err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -47,14 +47,14 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := th.uc.AddTask(req.Header, req.Description)
+	t, err := th.uc.AddTask(req.Header, req.Description)
 	if err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
 		switch {
-		case errors.Is(err, domain.ErrTaskAlreadyExists):
+		case errors.Is(err, task.ErrTaskAlreadyExists):
 			th.respondWithJSON(w, http.StatusConflict, errResponse)
 		default:
 			th.respondWithJSON(w, http.StatusInternalServerError, errResponse)
@@ -62,12 +62,12 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := http2.TaskResponse{
-		Header:      task.Header,
-		Description: task.Description,
-		IsCompleted: task.IsCompleted,
-		CompletedAt: task.CompletedAt,
-		CreatedAt:   task.CreatedAt,
+	res := dto.TaskResponse{
+		Header:      t.Header,
+		Description: t.Description,
+		IsCompleted: t.IsCompleted,
+		CompletedAt: t.CompletedAt,
+		CreatedAt:   t.CreatedAt,
 	}
 
 	th.respondWithJSON(w, http.StatusCreated, res)
@@ -75,9 +75,9 @@ func (th *TaskHandler) HandleAddTask(w http.ResponseWriter, r *http.Request) {
 
 func (th *TaskHandler) HandleChangeCompleteStatusTask(w http.ResponseWriter, r *http.Request) {
 	header := mux.Vars(r)["header"]
-	var req http2.CompleteTaskRequest
+	var req dto.CompleteTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
@@ -85,26 +85,26 @@ func (th *TaskHandler) HandleChangeCompleteStatusTask(w http.ResponseWriter, r *
 		th.respondWithJSON(w, http.StatusBadRequest, errResponse)
 		return
 	}
-	task, err := th.uc.ChangeCompleteStatusTask(header, req.IsCompleted)
+	t, err := th.uc.ChangeCompleteStatusTask(header, req.IsCompleted)
 	if err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
 		switch {
-		case errors.Is(err, domain.ErrTaskNotFound):
+		case errors.Is(err, task.ErrTaskNotFound):
 			th.respondWithJSON(w, http.StatusNotFound, errResponse)
 		default:
 			th.respondWithJSON(w, http.StatusInternalServerError, errResponse)
 		}
 		return
 	}
-	res := http2.TaskResponse{
-		Header:      task.Header,
-		Description: task.Description,
-		IsCompleted: task.IsCompleted,
-		CompletedAt: task.CompletedAt,
-		CreatedAt:   task.CreatedAt,
+	res := dto.TaskResponse{
+		Header:      t.Header,
+		Description: t.Description,
+		IsCompleted: t.IsCompleted,
+		CompletedAt: t.CompletedAt,
+		CreatedAt:   t.CreatedAt,
 	}
 
 	th.respondWithJSON(w, http.StatusOK, res)
@@ -124,14 +124,14 @@ func (th *TaskHandler) HandleGetUncompletedTasks(w http.ResponseWriter, r *http.
 
 func (th *TaskHandler) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 	header := mux.Vars(r)["header"]
-	task, err := th.uc.GetTask(header)
+	t, err := th.uc.GetTask(header)
 	if err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
 		switch {
-		case errors.Is(err, domain.ErrTaskNotFound):
+		case errors.Is(err, task.ErrTaskNotFound):
 			th.respondWithJSON(w, http.StatusOK, errResponse)
 		default:
 			th.respondWithJSON(w, http.StatusOK, errResponse)
@@ -139,12 +139,12 @@ func (th *TaskHandler) HandleGetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := http2.TaskResponse{
-		Header:      task.Header,
-		Description: task.Description,
-		IsCompleted: task.IsCompleted,
-		CompletedAt: task.CompletedAt,
-		CreatedAt:   task.CreatedAt,
+	res := dto.TaskResponse{
+		Header:      t.Header,
+		Description: t.Description,
+		IsCompleted: t.IsCompleted,
+		CompletedAt: t.CompletedAt,
+		CreatedAt:   t.CreatedAt,
 	}
 
 	th.respondWithJSON(w, http.StatusOK, res)
@@ -154,13 +154,13 @@ func (th *TaskHandler) HandleRemoveTask(w http.ResponseWriter, r *http.Request) 
 	header := mux.Vars(r)["header"]
 	err := th.uc.RemoveTask(header)
 	if err != nil {
-		errResponse := http2.ErrorResponse{
+		errResponse := dto.ErrorResponse{
 			Message: err.Error(),
 			Time:    time.Now(),
 		}
 
 		switch {
-		case errors.Is(err, domain.ErrTaskNotFound):
+		case errors.Is(err, task.ErrTaskNotFound):
 			th.respondWithJSON(w, http.StatusNotFound, errResponse)
 		default:
 			th.respondWithJSON(w, http.StatusInternalServerError, errResponse)

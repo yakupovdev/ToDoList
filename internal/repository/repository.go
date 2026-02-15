@@ -4,55 +4,55 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yakupovdev/ToDoList/internal/domain"
+	"github.com/yakupovdev/ToDoList/internal/domain/entity/task"
 )
 
 type TaskRepository struct {
-	tasks map[string]domain.Task
+	tasks map[string]task.Task
 	mtx   sync.RWMutex
 }
 
 func NewTaskRepository() *TaskRepository {
 	return &TaskRepository{
-		tasks: make(map[string]domain.Task),
+		tasks: make(map[string]task.Task),
 		mtx:   sync.RWMutex{},
 	}
 }
 
-func (s *TaskRepository) AddTask(task domain.Task) (domain.Task, error) {
+func (s *TaskRepository) AddTask(t task.Task) (task.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	if _, ok := s.tasks[task.Header]; ok {
-		return domain.Task{}, domain.ErrTaskAlreadyExists
+	if _, ok := s.tasks[t.Header]; ok {
+		return task.Task{}, task.ErrTaskAlreadyExists
 	}
-	s.tasks[task.Header] = task
-	return task, nil
+	s.tasks[t.Header] = t
+	return t, nil
 }
 
-func (s *TaskRepository) GetTask(header string) (domain.Task, error) {
+func (s *TaskRepository) GetTask(header string) (task.Task, error) {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	task, ok := s.tasks[header]
+	t, ok := s.tasks[header]
 	if !ok {
-		return domain.Task{}, domain.ErrTaskNotFound
+		return task.Task{}, task.ErrTaskNotFound
 	}
-	return task, nil
+	return t, nil
 }
 
-func (s *TaskRepository) GetTasks() []domain.Task {
+func (s *TaskRepository) GetTasks() []task.Task {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	tasks := make([]domain.Task, 0, len(s.tasks))
+	tasks := make([]task.Task, 0, len(s.tasks))
 	for _, task := range s.tasks {
 		tasks = append(tasks, task)
 	}
 	return tasks
 }
 
-func (s *TaskRepository) GetUncompletedTasks() []domain.Task {
+func (s *TaskRepository) GetUncompletedTasks() []task.Task {
 	s.mtx.RLock()
 	defer s.mtx.RUnlock()
-	tasks := make([]domain.Task, 0, len(s.tasks))
+	tasks := make([]task.Task, 0, len(s.tasks))
 	for _, task := range s.tasks {
 		if !task.IsCompleted {
 			tasks = append(tasks, task)
@@ -61,22 +61,22 @@ func (s *TaskRepository) GetUncompletedTasks() []domain.Task {
 	return tasks
 }
 
-func (s *TaskRepository) ChangeCompleteStatusTask(header string, status bool) (domain.Task, error) {
+func (s *TaskRepository) ChangeCompleteStatusTask(header string, status bool) (task.Task, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
-	task, ok := s.tasks[header]
+	t, ok := s.tasks[header]
 	if !ok {
-		return domain.Task{}, domain.ErrTaskNotFound
+		return task.Task{}, task.ErrTaskNotFound
 	}
-	task.IsCompleted = status
+	t.IsCompleted = status
 	if status {
 		now := time.Now()
-		task.CompletedAt = &now
+		t.CompletedAt = &now
 	} else {
-		task.CompletedAt = nil
+		t.CompletedAt = nil
 	}
-	s.tasks[header] = task
-	return task, nil
+	s.tasks[header] = t
+	return t, nil
 }
 
 func (s *TaskRepository) RemoveTask(header string) error {
@@ -84,7 +84,7 @@ func (s *TaskRepository) RemoveTask(header string) error {
 	defer s.mtx.Unlock()
 	_, ok := s.tasks[header]
 	if !ok {
-		return domain.ErrTaskNotFound
+		return task.ErrTaskNotFound
 	}
 
 	delete(s.tasks, header)

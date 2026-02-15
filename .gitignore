@@ -21,7 +21,7 @@ dist/
 go.work
 go.work.sum
 
-# Go module cache (usually outside repo, but just in case)
+# Go module cache (usually outside userRepo, but just in case)
 pkg/
 
 # ======================
