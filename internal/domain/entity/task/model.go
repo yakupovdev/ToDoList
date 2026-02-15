@@ -44,3 +44,14 @@ func RestoreTask(header, description string, isCompleted bool, createdAt time.Ti
 		CompletedAt: completedAt,
 	}
 }
+
+func (t *Task) ChangeCompleteStatus(isCompleted bool) {
+	t.IsCompleted = isCompleted
+	if isCompleted {
+		now := time.Now()
+		t.CompletedAt = &now
+	} else {
+		t.CompletedAt = nil
+
+	}
+}
